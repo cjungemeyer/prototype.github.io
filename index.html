@@ -3,209 +3,271 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profilbild-Manager</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.21.2/babel.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Profilbild-Management</title>
     <style>
-        .circular-image {
-            width: 128px;
-            height: 128px;
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2c3e50;
+            --accent-color: #e74c3c;
+            --background-color: #ecf0f1;
+            --text-color: #34495e;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: var(--secondary-color);
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .profile-picture {
+            width: 200px;
+            height: 200px;
             border-radius: 50%;
             object-fit: cover;
-            object-position: center;
+            margin: 0 auto 1rem;
+            display: block;
+            border: 4px solid var(--primary-color);
+        }
+
+        .btn {
+            background-color: var(--primary-color);
+            color: #fff;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s ease;
+        }
+
+        .btn:hover {
+            background-color: #2980b9;
+        }
+
+        .btn-danger {
+            background-color: var(--accent-color);
+        }
+
+        .btn-danger:hover {
+            background-color: #c0392b;
+        }
+
+        .avatar-selection {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .avatar-option {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .avatar-option:hover {
+            transform: scale(1.1);
+        }
+
+        .upload-progress {
+            margin-top: 1rem;
+            height: 4px;
+            background-color: #ddd;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: var(--primary-color);
+            width: 0;
+            transition: width 0.3s ease;
+        }
+
+        .drag-drop-area {
+            border: 2px dashed var(--primary-color);
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            margin-top: 2rem;
+            transition: background-color 0.3s ease;
+        }
+
+        .drag-drop-area.dragover {
+            background-color: rgba(52, 152, 219, 0.1);
+        }
+
+        .filters {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .filter-btn {
+            background-color: transparent;
+            border: 1px solid var(--primary-color);
+            color: var(--primary-color);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .filter-btn:hover, .filter-btn.active {
+            background-color: var(--primary-color);
+            color: #fff;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .profile-picture {
+                width: 150px;
+                height: 150px;
+            }
         }
     </style>
 </head>
 <body>
-    <div id="root"></div>
-    
-    <script type="text/babel">
-        const { useState, useRef, useCallback } = React;
+    <div class="container">
+        <h1>Dein Profilbild</h1>
+        <img src="/api/placeholder/200/200" alt="Profilbild" id="profilePicture" class="profile-picture">
+        <div style="text-align: center; margin-top: 1rem;">
+            <button id="uploadBtn" class="btn">Bild hochladen</button>
+            <button id="removeBtn" class="btn btn-danger">Bild entfernen</button>
+        </div>
+        <div class="upload-progress">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+        <div class="filters">
+            <button class="filter-btn" data-filter="none">Normal</button>
+            <button class="filter-btn" data-filter="grayscale">Graustufen</button>
+            <button class="filter-btn" data-filter="sepia">Sepia</button>
+            <button class="filter-btn" data-filter="invert">Invertiert</button>
+        </div>
+        <div class="drag-drop-area" id="dragDropArea">
+            <p>Ziehe dein Bild hierher oder klicke, um es auszuwählen</p>
+        </div>
+        <div class="avatar-selection">
+            <img src="/api/placeholder/80/80" alt="Avatar 1" class="avatar-option" data-avatar="avatar1">
+            <img src="/api/placeholder/80/80" alt="Avatar 2" class="avatar-option" data-avatar="avatar2">
+            <img src="/api/placeholder/80/80" alt="Avatar 3" class="avatar-option" data-avatar="avatar3">
+            <img src="/api/placeholder/80/80" alt="Avatar 4" class="avatar-option" data-avatar="avatar4">
+        </div>
+    </div>
 
-        // Vereinfachte Icon-Komponenten
-        const Upload = () => <span>📤</span>;
-        const Crop = () => <span>✂️</span>;
-        const Trash2 = () => <span>🗑️</span>;
+    <script>
+        const profilePicture = document.getElementById('profilePicture');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const removeBtn = document.getElementById('removeBtn');
+        const progressBar = document.getElementById('progressBar');
+        const dragDropArea = document.getElementById('dragDropArea');
+        const avatarOptions = document.querySelectorAll('.avatar-option');
+        const filterBtns = document.querySelectorAll('.filter-btn');
 
-        // Shadcn UI-ähnliche Komponenten
-        const Button = ({ children, onClick, className, variant }) => (
-            <button 
-                onClick={onClick} 
-                className={`px-4 py-2 rounded-md ${
-                    variant === 'destructive' ? 'bg-red-500 text-white' : 
-                    variant === 'outline' ? 'border border-gray-300' : 
-                    'bg-blue-500 text-white'
-                } ${className}`}
-            >
-                {children}
-            </button>
-        );
+        let currentFilter = 'none';
 
-        const Input = React.forwardRef((props, ref) => (
-            <input ref={ref} {...props} className="border rounded-md px-2 py-1" />
-        ));
+        uploadBtn.addEventListener('click', () => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                handleFileUpload(file);
+            };
+            input.click();
+        });
 
-        const Alert = ({ children, variant }) => (
-            <div className={`p-4 rounded-md ${variant === 'destructive' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}`}>
-                {children}
-            </div>
-        );
+        removeBtn.addEventListener('click', () => {
+            profilePicture.src = '/api/placeholder/200/200';
+            progressBar.style.width = '0';
+        });
 
-        const Dialog = ({ open, onOpenChange, children }) => {
-            if (!open) return null;
-            return (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                    <div className="bg-white p-6 rounded-lg">
-                        {children}
-                        <button onClick={() => onOpenChange(false)} className="mt-4 px-4 py-2 bg-gray-200 rounded-md">Schließen</button>
-                    </div>
-                </div>
-            );
-        };
+        dragDropArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dragDropArea.classList.add('dragover');
+        });
 
-        const ProfileImageManager = () => {
-            const [image, setImage] = useState(null);
-            const [previewUrl, setPreviewUrl] = useState(null);
-            const [error, setError] = useState(null);
-            const [isCropDialogOpen, setIsCropDialogOpen] = useState(false);
-            const fileInputRef = useRef(null);
+        dragDropArea.addEventListener('dragleave', () => {
+            dragDropArea.classList.remove('dragover');
+        });
 
-            const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
-            const SUPPORTED_FORMATS = ['image/jpeg', 'image/png'];
-            const MAX_IMAGE_SIZE = 300; // Maximale Breite oder Höhe für die Vorschau
+        dragDropArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dragDropArea.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            handleFileUpload(file);
+        });
 
-            const scaleImage = useCallback((file) => {
-                return new Promise((resolve) => {
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        const img = new Image();
-                        img.onload = () => {
-                            const canvas = document.createElement('canvas');
-                            const ctx = canvas.getContext('2d');
-                            let width = img.width;
-                            let height = img.height;
+        avatarOptions.forEach(avatar => {
+            avatar.addEventListener('click', () => {
+                profilePicture.src = avatar.src;
+            });
+        });
 
-                            if (width > height) {
-                                if (width > MAX_IMAGE_SIZE) {
-                                    height *= MAX_IMAGE_SIZE / width;
-                                    width = MAX_IMAGE_SIZE;
-                                }
-                            } else {
-                                if (height > MAX_IMAGE_SIZE) {
-                                    width *= MAX_IMAGE_SIZE / height;
-                                    height = MAX_IMAGE_SIZE;
-                                }
-                            }
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                currentFilter = btn.dataset.filter;
+                applyFilter();
+                filterBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
 
-                            canvas.width = width;
-                            canvas.height = height;
-                            ctx.drawImage(img, 0, 0, width, height);
-                            canvas.toBlob(resolve, file.type);
-                        };
-                        img.src = e.target.result;
-                    };
-                    reader.readAsDataURL(file);
-                });
-            }, []);
+        function handleFileUpload(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                profilePicture.src = e.target.result;
+                simulateUpload();
+            };
+            reader.readAsDataURL(file);
+        }
 
-            const handleImageUpload = useCallback(async (event) => {
-                const file = event.target.files[0];
-                if (file) {
-                    if (file.size > MAX_FILE_SIZE) {
-                        setError('Die Datei ist zu groß. Maximale Größe ist 5 MB.');
-                        return;
-                    }
-                    if (!SUPPORTED_FORMATS.includes(file.type)) {
-                        setError('Nicht unterstütztes Bildformat. Bitte JPEG oder PNG verwenden.');
-                        return;
-                    }
-                    setError(null);
-
-                    try {
-                        const scaledBlob = await scaleImage(file);
-                        setImage(scaledBlob);
-                        setPreviewUrl(URL.createObjectURL(scaledBlob));
-                    } catch (err) {
-                        setError('Fehler beim Verarbeiten des Bildes. Bitte versuchen Sie es erneut.');
-                    }
+        function simulateUpload() {
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 10;
+                progressBar.style.width = `${progress}%`;
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        progressBar.style.width = '0';
+                    }, 1000);
                 }
-            }, [scaleImage]);
+            }, 200);
+        }
 
-            const handleDeleteImage = useCallback(() => {
-                setImage(null);
-                setPreviewUrl(null);
-                if (fileInputRef.current) {
-                    fileInputRef.current.value = '';
-                }
-            }, []);
-
-            const handleCropImage = useCallback(() => {
-                setIsCropDialogOpen(true);
-            }, []);
-
-            const handleSaveImage = useCallback(() => {
-                console.log('Bild gespeichert:', image);
-            }, [image]);
-
-            return (
-                <div className="max-w-md mx-auto p-4">
-                    <h2 className="text-2xl font-bold mb-4">Profilbild verwalten</h2>
-                    
-                    {previewUrl && (
-                        <div className="mb-4 flex justify-center">
-                            <img src={previewUrl} alt="Profilbild Vorschau" className="circular-image" />
-                        </div>
-                    )}
-                    
-                    <div className="flex gap-2 mb-4">
-                        <Button onClick={() => fileInputRef.current.click()}>
-                            <Upload /> Bild hochladen
-                        </Button>
-                        <Input
-                            type="file"
-                            ref={fileInputRef}
-                            className="hidden"
-                            onChange={handleImageUpload}
-                            accept="image/jpeg,image/png"
-                        />
-                        
-                        {image && (
-                            <>
-                                <Button variant="outline" onClick={handleCropImage}>
-                                    <Crop /> Zuschneiden
-                                </Button>
-                                <Button variant="destructive" onClick={handleDeleteImage}>
-                                    <Trash2 /> Löschen
-                                </Button>
-                            </>
-                        )}
-                    </div>
-                    
-                    {error && (
-                        <Alert variant="destructive" className="mb-4">
-                            {error}
-                        </Alert>
-                    )}
-                    
-                    {image && (
-                        <Button onClick={handleSaveImage} className="w-full">
-                            Profilbild speichern
-                        </Button>
-                    )}
-
-                    <Dialog open={isCropDialogOpen} onOpenChange={setIsCropDialogOpen}>
-                        <h3 className="text-lg font-semibold mb-4">Bild zuschneiden</h3>
-                        <div className="flex items-center justify-center h-64 bg-gray-100">
-                            {previewUrl && <img src={previewUrl} alt="Zuschneiden" className="circular-image" />}
-                        </div>
-                    </Dialog>
-                </div>
-            );
-        };
-
-        ReactDOM.createRoot(document.getElementById('root')).render(<ProfileImageManager />);
+        function applyFilter() {
+            profilePicture.style.filter = currentFilter === 'none' ? 'none' :
+                currentFilter === 'grayscale' ? 'grayscale(100%)' :
+                currentFilter === 'sepia' ? 'sepia(100%)' :
+                currentFilter === 'invert' ? 'invert(100%)' : 'none';
+        }
     </script>
 </body>
 </html>
